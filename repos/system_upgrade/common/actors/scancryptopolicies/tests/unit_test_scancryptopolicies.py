@@ -70,7 +70,7 @@ def test_read_policy_dirs(current_actor_context):
 
         # first policy module
         path1 = os.path.join(dir1, "policy.mpol")
-        with open(path1, "x") as f:
+        with open(path1, "w") as f:
             f.write('test')
         files = read_policy_dirs([dir1], CustomCryptoPolicy, ".pol")
         assert files == []
@@ -85,11 +85,11 @@ def test_read_policy_dirs(current_actor_context):
 
             # first policy file
             path2 = os.path.join(dir2, "mypolicy.pol")
-            with open(path2, "x") as f:
+            with open(path2, "w") as f:
                 f.write('test2')
             # second policy file
             path3 = os.path.join(dir2, "other.pol")
-            with open(path3, "x") as f:
+            with open(path3, "w") as f:
                 f.write('test3')
 
             files = read_policy_dirs([dir1, dir2], dict, ".pol")
