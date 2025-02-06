@@ -1,5 +1,6 @@
 from leapp.actors import Actor
 from leapp.libraries.actor import scancryptopolicies
+from leapp.libraries.common.config import version
 from leapp.models import CryptoPolicyInfo
 from leapp.tags import FactsPhaseTag, IPUWorkflowTag
 
@@ -23,4 +24,8 @@ class ScanCryptoPolicies(Actor):
     tags = (IPUWorkflowTag, FactsPhaseTag)
 
     def process(self):
+        # there are no crypto policies in EL 7
+        if int(version.get_target_major_version()) < 9:
+            return
+
         scancryptopolicies.process()

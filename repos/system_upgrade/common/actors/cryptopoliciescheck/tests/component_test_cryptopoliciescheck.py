@@ -1,3 +1,6 @@
+import pytest
+
+from leapp.libraries.common.config import version
 from leapp.models import (
     CopyFile,
     CryptoPolicyInfo,
@@ -8,7 +11,13 @@ from leapp.models import (
 )
 
 
-def test_actor_execution_default(current_actor_context):
+@pytest.mark.parametrize(('target_version', 'should_run'), [
+    ('8', False),
+    ('9', True),
+    ('10', True),
+])
+def test_actor_execution_default(monkeypatch, current_actor_context, target_version, should_run):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: target_version)
     current_actor_context.feed(
         CryptoPolicyInfo(
             current_policy="DEFAULT",
@@ -17,10 +26,17 @@ def test_actor_execution_default(current_actor_context):
         )
     )
     current_actor_context.run()
-    assert not current_actor_context.consume(TargetUserSpacePreupgradeTasks)
+    if should_run:
+        assert not current_actor_context.consume(TargetUserSpacePreupgradeTasks)
 
 
-def test_actor_execution_legacy(current_actor_context):
+@pytest.mark.parametrize(('target_version', 'should_run'), [
+    ('8', False),
+    ('9', True),
+    ('10', True),
+])
+def test_actor_execution_legacy(monkeypatch, current_actor_context, target_version, should_run):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: target_version)
     current_actor_context.feed(
         CryptoPolicyInfo(
             current_policy="LEGACY",
@@ -30,15 +46,22 @@ def test_actor_execution_legacy(current_actor_context):
     )
     current_actor_context.run()
 
-    assert current_actor_context.consume(TargetUserSpacePreupgradeTasks)
-    u = current_actor_context.consume(TargetUserSpacePreupgradeTasks)[0]
-    assert u.install_rpms == ['crypto-policies-scripts']
-    assert u.copy_files == []
+    if should_run:
+        assert current_actor_context.consume(TargetUserSpacePreupgradeTasks)
+        u = current_actor_context.consume(TargetUserSpacePreupgradeTasks)[0]
+        assert u.install_rpms == ['crypto-policies-scripts']
+        assert u.copy_files == []
 
-    assert current_actor_context.consume(Report)
+        assert current_actor_context.consume(Report)
 
 
-def test_actor_execution_custom(current_actor_context):
+@pytest.mark.parametrize(('target_version', 'should_run'), [
+    ('8', False),
+    ('9', True),
+    ('10', True),
+])
+def test_actor_execution_custom(monkeypatch, current_actor_context, target_version, should_run):
+    monkeypatch.setattr(version, 'get_target_major_version', lambda: target_version)
     current_actor_context.feed(
         CryptoPolicyInfo(
             current_policy="CUSTOM:SHA2",
@@ -52,12 +75,13 @@ def test_actor_execution_custom(current_actor_context):
     )
     current_actor_context.run()
 
-    assert current_actor_context.consume(TargetUserSpacePreupgradeTasks)
-    u = current_actor_context.consume(TargetUserSpacePreupgradeTasks)[0]
-    assert u.install_rpms == ['crypto-policies-scripts']
-    assert u.copy_files == [
-        CopyFile(src='/etc/crypto-policies/policies/CUSTOM.pol'),
-        CopyFile(src='/etc/crypto-policies/policies/modules/SHA2.pmod'),
-    ]
+    if should_run:
+        assert current_actor_context.consume(TargetUserSpacePreupgradeTasks)
+        u = current_actor_context.consume(TargetUserSpacePreupgradeTasks)[0]
+        assert u.install_rpms == ['crypto-policies-scripts']
+        assert u.copy_files == [
+            CopyFile(src='/etc/crypto-policies/policies/CUSTOM.pol'),
+            CopyFile(src='/etc/crypto-policies/policies/modules/SHA2.pmod'),
+        ]
 
-    assert current_actor_context.consume(Report)
+        assert current_actor_context.consume(Report)
